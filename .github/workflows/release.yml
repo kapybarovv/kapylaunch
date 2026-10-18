@@ -82,10 +82,14 @@ jobs:
           $compiler = Get-ChildItem "C:\Program Files (x86)\Inno Setup *\ISCC.exe" | Select-Object -First 1
           if (-not $compiler) { throw "Inno Setup compiler was not found" }
           & $compiler.FullName "packages\installer\build\innosetup\kapylauncher\main.iss"
+          $installer = Get-ChildItem "packages\installer\build\innosetup\kapylauncher" -Filter "kapylauncher-setup.exe" -Recurse | Select-Object -First 1
+          if (-not $installer) { throw "The Windows installer was not produced" }
+          New-Item -ItemType Directory -Force -Path "dist" | Out-Null
+          Copy-Item $installer.FullName "dist\kapylauncher-windows-setup.exe"
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: packages/installer/build/innosetup/kapylauncher/kapylauncher-setup.exe
+          path: dist/kapylauncher-windows-setup.exe
           if-no-files-found: error
 
   macos:
