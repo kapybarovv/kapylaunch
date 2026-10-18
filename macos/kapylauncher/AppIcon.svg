@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="surface" x1="120" y1="72" x2="886" y2="956" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F6E7A"/>
+      <stop offset="1" stop-color="#0B263B"/>
+    </linearGradient>
+    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#A8E35D"/>
+      <stop offset="1" stop-color="#56A63A"/>
+    </linearGradient>
+    <linearGradient id="dirt" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#A7663A"/>
+      <stop offset="1" stop-color="#63351F"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FFF8D8" stop-opacity=".66"/>
+      <stop offset=".38" stop-color="#F4BE75" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#B66B3C" stop-opacity=".22"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FFF" stop-opacity=".62"/>
+      <stop offset=".46" stop-color="#FFF" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#FFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- macOS icon silhouette -->
+  <rect x="16" y="16" width="992" height="992" rx="224" fill="url(#surface)"/>
+  <rect x="17" y="17" width="990" height="990" rx="223" fill="none" stroke="#BDECF0" stroke-opacity=".22" stroke-width="2"/>
+  <ellipse cx="512" cy="488" rx="388" ry="348" fill="#69D6D2" fill-opacity=".08"/>
+
+  <!-- A deliberately simple voxel grass block -->
+  <path d="M222 370 512 218 802 370 512 522Z" fill="url(#grass)"/>
+  <path d="M222 370 512 522v313L222 683Z" fill="#754127"/>
+  <path d="M512 522 802 370v313L512 835Z" fill="url(#dirt)"/>
+  <path d="M222 370 512 522 802 370v82L512 604 222 452Z" fill="#4D9734"/>
+
+  <!-- restrained pixel language; no texture noise -->
+  <path d="m334 365 59-31 61 32-59 31Zm119-63 59-31 60 32-59 31Zm119 63 59-31 60 32-59 31Z" fill="#C4EE79" opacity=".52"/>
+  <path d="m266 535 66 35v72l-66-35Zm104 55 64 34v73l-64-34Zm-104 136 66 35v-72l-66-35Z" fill="#9C5A34" opacity=".85"/>
+  <path d="m693 521 64-34v73l-64 34Zm-105 55 64-34v73l-64 34Zm105 136 64-34v-73l-64 34Z" fill="#4F2A1B" opacity=".64"/>
+
+  <!-- The capybara is a single Liquid Glass lens, not a mascot illustration. -->
+  <path d="M392 506c0-48 38-86 86-86h68c48 0 86 38 86 86v139c0 50-40 90-90 90h-60c-50 0-90-40-90-90Z" fill="url(#glass)" stroke="#FFF4D9" stroke-opacity=".56" stroke-width="5"/>
+  <path d="M408 455c-3-43 30-76 72-76h21v78Zm187-76h21c42 0 75 33 72 76l-93 2Z" fill="#E6A967" fill-opacity=".68" stroke="#FFF2D2" stroke-opacity=".36" stroke-width="4"/>
+  <rect x="435" y="521" width="34" height="38" rx="12" fill="#162A35"/>
+  <rect x="555" y="521" width="34" height="38" rx="12" fill="#162A35"/>
+  <path d="M473 592c0-19 15-34 34-34h10c19 0 34 15 34 34v35c0 19-15 34-34 34h-10c-19 0-34-15-34-34Z" fill="#69402B"/>
+  <path d="M487 683c17 11 33 16 49 16 17 0 33-5 50-16" fill="none" stroke="#F7CE9D" stroke-linecap="round" stroke-width="10"/>
+  <path d="M430 472c27-34 64-47 113-42" fill="none" stroke="url(#sheen)" stroke-linecap="round" stroke-width="23"/>
+  <path d="M429 501c-11 27-16 55-16 82" fill="none" stroke="#FFF" stroke-opacity=".3" stroke-linecap="round" stroke-width="8"/>
+</svg>

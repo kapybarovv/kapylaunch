@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="840" viewBox="0 0 660 420">
+  <defs>
+    <linearGradient id="night" x1="0" y1="0" x2="660" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A2B3C"/>
+      <stop offset=".54" stop-color="#061D2B"/>
+      <stop offset="1" stop-color="#020E19"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="70" y1="130" x2="590" y2="360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DDFBFF" stop-opacity=".26"/>
+      <stop offset=".42" stop-color="#9DEEFF" stop-opacity=".11"/>
+      <stop offset="1" stop-color="#077D9F" stop-opacity=".08"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ECFFFF" stop-opacity=".70"/>
+      <stop offset=".4" stop-color="#B9F5FF" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#2AC7E5" stop-opacity=".08"/>
+    </linearGradient>
+  </defs>
+  <rect width="660" height="420" fill="url(#night)"/>
+  <circle cx="118" cy="68" r="132" fill="#1D8FA5" fill-opacity=".13"/>
+  <circle cx="565" cy="362" r="164" fill="#0A7293" fill-opacity=".11"/>
+  <rect x="45" y="127" width="570" height="226" rx="34" fill="#001521" fill-opacity=".28"/>
+  <rect x="45" y="124" width="570" height="226" rx="34" fill="url(#glass)" stroke="url(#edge)" stroke-width="1.5"/>
+  <path d="M79 151c83-30 263-31 384-4" fill="none" stroke="#F0FFFF" stroke-opacity=".30" stroke-linecap="round" stroke-width="6"/>
+  <path d="M76 331c142 19 353 17 504-9" fill="none" stroke="#52D7EC" stroke-opacity=".10" stroke-linecap="round" stroke-width="7"/>
+  <text x="330" y="67" fill="#F5FFFF" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="21" font-weight="700" text-anchor="middle">Установить kapylauncher</text>
+  <text x="330" y="93" fill="#B4DCE5" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="14" text-anchor="middle">Перетащите приложение в папку Applications</text>
+  <circle cx="330" cy="230" r="47" fill="#C4FAFF" fill-opacity=".10" stroke="#BDF9FF" stroke-opacity=".20"/>
+  <path d="M299 230h56" fill="none" stroke="#EEFFFF" stroke-linecap="round" stroke-width="7"/>
+  <path d="m341 213 18 17-18 17" fill="none" stroke="#EEFFFF" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
+  <path d="M306 195c18-9 42-9 60 0" fill="none" stroke="#FFFFFF" stroke-opacity=".22" stroke-linecap="round" stroke-width="5"/>
+</svg>

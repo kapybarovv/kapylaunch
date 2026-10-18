@@ -103,20 +103,12 @@ jobs:
           fi
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" macos/kapylauncher/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${VERSION}" macos/kapylauncher/Info.plist
-      - name: Build universal macOS app
-        run: |
-          ./macos/kapylauncher/build.sh
-          mkdir -p dist
-          STAGE="$(mktemp -d)"
-          ditto --norsrc macos/kapylauncher/build/kapylauncher.app "${STAGE}/kapylauncher.app"
-          xattr -cr "${STAGE}/kapylauncher.app"
-          codesign --verify --deep --strict "${STAGE}/kapylauncher.app"
-          (cd "${STAGE}" && /usr/bin/zip -qry -X "${GITHUB_WORKSPACE}/dist/kapylauncher-macos-universal.zip" kapylauncher.app)
-          shasum -a 256 dist/kapylauncher-macos-universal.zip > dist/kapylauncher-macos-universal.zip.sha256
+      - name: Build universal macOS app and Finder installer
+        run: ./macos/kapylauncher/package.sh
       - uses: actions/upload-artifact@v4
         with:
           name: macos-universal
-          path: dist/kapylauncher-macos-universal.zip*
+          path: dist/kapylauncher-macos-universal.*
           if-no-files-found: error
 
   publish:
