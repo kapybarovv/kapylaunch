@@ -17,6 +17,9 @@ plugins {
     net.legacylauncher.brand
 }
 
+// Release tags set this explicitly in CI so each published build has a distinct update version.
+System.getenv("KAPYLAUNCHER_VERSION")?.let { version = it }
+
 val java11: SourceSet by sourceSets.creating {
     compileClasspath += sourceSets.main.get().compileClasspath
     runtimeClasspath += sourceSets.main.get().runtimeClasspath
@@ -248,6 +251,7 @@ buildConfig {
 
 val generateKapylauncherUpdateManifest by tasks.registering {
     dependsOn(jar)
+    inputs.property("productVersion", brand.version)
     val manifestFile = layout.buildDirectory.file("update/${brand.brand.get()}/kapylauncher-update.json")
     outputs.file(manifestFile)
     doLast {
