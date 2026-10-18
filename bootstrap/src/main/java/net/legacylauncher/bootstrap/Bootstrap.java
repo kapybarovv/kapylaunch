@@ -118,6 +118,10 @@ public final class Bootstrap {
         if (disallowBetaSwitch) {
             bootstrap.whenIPCReady(ipc -> ipc.setMetadata("can_switch_to_beta_branch", Boolean.FALSE));
         }
+        if ("kapylauncher".equalsIgnoreCase(localBootstrapMeta.getShortBrand())) {
+            // This build's updater follows the stable GitHub Releases feed only.
+            bootstrap.whenIPCReady(ipc -> ipc.setMetadata("can_switch_to_beta_branch", Boolean.FALSE));
+        }
 
         log.info("Version: {}", localBootstrapMeta.getVersion());
 

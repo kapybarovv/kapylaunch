@@ -246,8 +246,29 @@ buildConfig {
     buildConfigField("String", "SUPPORT_EMAIL", "\"${brand.supportEmail.get()}\"")
 }
 
+val generateKapylauncherUpdateManifest by tasks.registering {
+    dependsOn(jar)
+    val manifestFile = layout.buildDirectory.file("update/${brand.brand.get()}/kapylauncher-update.json")
+    outputs.file(manifestFile)
+    doLast {
+        val launcherFile = jar.outputs.files.singleFile
+        val manifest = mapOf(
+            "launcher" to mapOf(
+                "version" to brand.version.get(),
+                "checksum" to generateChecksum(launcherFile),
+                "url" to listOf("https://github.com/kapybarovv/kapylaunch/releases/latest/download/kapylauncher-launcher.jar"),
+                "description" to emptyMap<String, String>()
+            )
+        )
+        manifestFile.get().asFile.apply {
+            parentFile.mkdirs()
+            writer().use { writer -> ObjectMapper().writeValue(writer, manifest) }
+        }
+    }
+}
+
 val prepareDeploy by tasks.registering {
-    dependsOn(generateUpdateJson, copyJarAndRename, generateSha256File)
+    dependsOn(generateUpdateJson, copyJarAndRename, generateSha256File, generateKapylauncherUpdateManifest)
     outputs.files(dependsOn)
 }
 

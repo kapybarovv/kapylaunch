@@ -65,6 +65,10 @@ public class UpdateMeta {
             private UpdateMeta fetchUpdateMeta(ScheduledExecutorService scheduler) throws InterruptedException, UpdateMetaFetchFailed {
                 log.info("Requesting update for: {}", shortBrand);
 
+                if ("kapylauncher".equalsIgnoreCase(shortBrand)) {
+                    return fetchKapylauncherRelease();
+                }
+
                 Gson gson = createGson(shortBrand);
                 List<URL> urlList = HostsV1.BOOTSTRAP.stream().map(host -> String.format(Locale.ROOT,
                         "https://%s/%s/bootstrap.json.mgz.signed",
@@ -105,6 +109,33 @@ public class UpdateMeta {
                     }
                 }
                 throw new UpdateMetaFetchFailed();
+            }
+
+            private UpdateMeta fetchKapylauncherRelease() throws UpdateMetaFetchFailed {
+                HttpURLConnection connection = null;
+                try {
+                    URL manifestUrl = new URL("https://github.com/kapybarovv/kapylaunch/releases/latest/download/kapylauncher-update.json");
+                    connection = (HttpURLConnection) manifestUrl.openConnection();
+                    connection.setConnectTimeout(CONNECT_TIMEOUT);
+                    connection.setReadTimeout(READ_TIMEOUT * 4);
+                    connection.setUseCaches(false);
+                    connection.setInstanceFollowRedirects(true);
+                    connection.setRequestProperty("User-Agent", "kapylauncher-updater");
+                    connection.setRequestProperty("Accept", "application/json");
+                    if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                        throw new IOException("GitHub release manifest returned HTTP " + connection.getResponseCode());
+                    }
+                    try (InputStream stream = connection.getInputStream()) {
+                        return fetchFrom(createGson(shortBrand), stream);
+                    }
+                } catch (Exception e) {
+                    log.warn("Couldn't fetch kapylauncher update manifest from GitHub", e);
+                    throw new UpdateMetaFetchFailed();
+                } finally {
+                    if (connection != null) {
+                        connection.disconnect();
+                    }
+                }
             }
 
             private void setupInterruption(AtomicBoolean canCancel, ConnectionInterrupter interrupter) {

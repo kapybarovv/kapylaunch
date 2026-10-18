@@ -96,11 +96,36 @@ public class CenterPanel extends VPanel implements Blockable {
         Graphics2D g = (Graphics2D) g0;
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        g.setColor(getBackground());
+        Shape panelShape;
         if (theme.getArc() > 0) {
-            g.fillRoundRect(0, 0, getWidth(), getHeight(), theme.getArc(), theme.getArc());
+            panelShape = new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), theme.getArc(), theme.getArc());
         } else {
-            g.fillRect(0, 0, getWidth(), getHeight());
+            panelShape = new Rectangle2D.Double(0, 0, getWidth(), getHeight());
+        }
+
+        g.setColor(getBackground());
+        g.fill(panelShape);
+
+        // A soft, translucent reflection gives the panel the layered glass look
+        // without pretending to provide platform-specific backdrop blur.
+        g.setPaint(new GradientPaint(
+                0, 0, new Color(230, 247, 255, 34),
+                0, Math.max(1, getHeight() * .68f), new Color(230, 247, 255, 0)
+        ));
+        g.fill(panelShape);
+
+        float lensRadius = Math.max(1f, Math.max(getWidth(), getHeight()) * .58f);
+        g.setPaint(new RadialGradientPaint(
+                new Point((int) (getWidth() * .22), (int) (getHeight() * .04)),
+                lensRadius,
+                new float[]{0f, 1f},
+                new Color[]{new Color(197, 235, 255, 28), new Color(197, 235, 255, 0)}
+        ));
+        g.fill(panelShape);
+
+        if (getWidth() > theme.getArc() * 2) {
+            g.setColor(new Color(255, 255, 255, 54));
+            g.drawLine(theme.getArc(), 1, getWidth() - theme.getArc(), 1);
         }
 
         g.setColor(theme.getBorder());

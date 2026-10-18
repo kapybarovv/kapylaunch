@@ -1,5 +1,5 @@
-﻿#define Publisher "Legacy Launcher Team"
-#define URL "https://llaun.ch"
+﻿#define Publisher "KapyLauncher"
+#define URL "https://github.com/kapybarovv/kapylaunch"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -16,14 +16,14 @@ AppUpdatesURL={#URL}
 AlwaysUsePersonalGroup=yes
 ArchitecturesInstallIn64BitMode=x64compatible arm64
 ArchitecturesAllowed=x64compatible arm64
-DefaultDirName={userappdata}\.tlauncher\{#Branch}\Minecraft
+DefaultDirName={userappdata}\kapylauncher
 UsePreviousAppDir=no
 DisableProgramGroupPage=yes
 DisableDirPage=no
 DisableWelcomePage=no
 ExtraDiskSpaceRequired=536870912
 PrivilegesRequired=lowest
-OutputBaseFilename=LegacyLauncher_{#Branch}_Installer
+OutputBaseFilename=kapylauncher-setup
 ;Compression=none
 Compression=lzma2/normal
 SetupIconFile=icons/icon.ico

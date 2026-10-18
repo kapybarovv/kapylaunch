@@ -211,7 +211,46 @@ public class FlatLaf {
         } catch (Exception e) {
             log.error("Couldn't set L&F", e);
         }
+        if (UIManager.getLookAndFeel() instanceof com.formdev.flatlaf.FlatLaf) {
+            applyLiquidGlassDefaults();
+        }
         updateLafInWindows();
+    }
+
+    private static void applyLiquidGlassDefaults() {
+        UIDefaults defaults = UIManager.getLookAndFeelDefaults();
+        Color foreground = new Color(244, 249, 255);
+        defaults.put("Component.arc", 18);
+        defaults.put("Button.arc", 24);
+        defaults.put("TextField.arc", 15);
+        defaults.put("PasswordField.arc", 15);
+        defaults.put("ComboBox.arc", 16);
+        defaults.put("ProgressBar.arc", 12);
+        defaults.put("CheckBox.icon.arc", 6);
+
+        defaults.put("Button.background", new Color(30, 77, 105, 178));
+        defaults.put("Button.foreground", foreground);
+        defaults.put("Button.borderColor", new Color(225, 244, 255, 88));
+        defaults.put("Button.hoverBackground", new Color(60, 130, 169, 205));
+        defaults.put("Button.pressedBackground", new Color(12, 55, 81, 220));
+        defaults.put("Button.focusedBorderColor", new Color(123, 208, 255, 210));
+        defaults.put("Button.default.background", new Color(0, 122, 255, 220));
+        defaults.put("Button.default.hoverBackground", new Color(38, 146, 255, 235));
+        defaults.put("Button.default.foreground", foreground);
+
+        Color field = new Color(9, 31, 49, 190);
+        defaults.put("TextField.background", field);
+        defaults.put("PasswordField.background", field);
+        defaults.put("ComboBox.background", field);
+        defaults.put("TextArea.background", field);
+        defaults.put("TextField.foreground", foreground);
+        defaults.put("PasswordField.foreground", foreground);
+        defaults.put("ComboBox.foreground", foreground);
+        defaults.put("TextArea.foreground", foreground);
+        defaults.put("TextField.borderColor", new Color(222, 242, 255, 85));
+        defaults.put("ComboBox.borderColor", new Color(222, 242, 255, 85));
+        defaults.put("ProgressBar.background", new Color(229, 245, 255, 48));
+        defaults.put("ProgressBar.foreground", new Color(87, 190, 255, 230));
     }
 
     public static void setSystemLookAndFeel() {

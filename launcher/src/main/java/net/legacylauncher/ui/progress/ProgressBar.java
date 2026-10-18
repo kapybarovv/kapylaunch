@@ -9,6 +9,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.geom.RoundRectangle2D;
 import java.util.Objects;
 
 public class ProgressBar extends JProgressBar {
@@ -30,6 +31,8 @@ public class ProgressBar extends JProgressBar {
     private int cS_x;
     private int eS_x;
     private int oldWidth;
+    private Timer glassTimer;
+    private float glassOffset;
 
     public ProgressBar(Component parentComp) {
         sync = new Object();
@@ -52,6 +55,13 @@ public class ProgressBar extends JProgressBar {
         }
         setFont(getFont().deriveFont(LegacyLauncherFrame.getFontSize()));
         setOpaque(false);
+        setBorderPainted(false);
+        glassTimer = new Timer(32, event -> {
+            glassOffset = glassOffset >= 1f ? 0f : glassOffset + .018f;
+            repaint();
+        });
+        glassTimer.setCoalesce(true);
+        glassTimer.setRepeats(true);
     }
 
     public ProgressBar() {
@@ -173,7 +183,6 @@ public class ProgressBar extends JProgressBar {
             }
 
             Graphics2D g2D = (Graphics2D) g;
-            g.setColor(textColor);
             g2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             g.setFont(font);
             drawString(g, wS, wS_x);
@@ -185,16 +194,90 @@ public class ProgressBar extends JProgressBar {
     private void drawString(Graphics g, String s, int x) {
         if (s != null) {
             int y = (getHeight() - g.getFontMetrics().getDescent() + g.getFontMetrics().getAscent()) / 2;
-            g.setColor(Color.white);
+            g.setColor(new Color(0, 14, 28, 142));
+            g.drawString(s, x, y + 1);
+            g.setColor(textColor);
+            g.drawString(s, x, y);
+        }
+    }
 
-            for (int borderX = -1; borderX < 2; ++borderX) {
-                for (int borderY = -1; borderY < 2; ++borderY) {
-                    g.drawString(s, x + borderX, y + borderY);
-                }
+    @Override
+    protected void paintComponent(Graphics graphics) {
+        Graphics2D g = (Graphics2D) graphics.create();
+        try {
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+            int inset = Math.max(4, SwingUtil.magnify(5));
+            int trackWidth = Math.max(0, getWidth() - inset * 2);
+            int trackHeight = Math.max(7, Math.min(11, SwingUtil.magnify(9)));
+            int trackY = (getHeight() - trackHeight) / 2;
+            RoundRectangle2D track = new RoundRectangle2D.Float(inset, trackY, trackWidth, trackHeight,
+                    trackHeight, trackHeight);
+
+            g.setColor(new Color(235, 247, 255, 45));
+            g.fill(track);
+            g.setColor(new Color(255, 255, 255, 44));
+            g.draw(track);
+
+            if (trackWidth <= 0) {
+                return;
             }
 
-            g.setColor(Color.black);
-            g.drawString(s, x, y);
+            int fillX = inset;
+            int fillWidth;
+            if (isIndeterminate()) {
+                fillWidth = Math.max(trackHeight * 3, trackWidth / 3);
+                fillX += Math.round((trackWidth - fillWidth) * glassOffset);
+            } else {
+                fillWidth = Math.round(trackWidth * (float) getPercentComplete());
+            }
+
+            if (fillWidth > 0) {
+                RoundRectangle2D fill = new RoundRectangle2D.Float(fillX, trackY, fillWidth, trackHeight,
+                        trackHeight, trackHeight);
+                g.setPaint(new GradientPaint(0, trackY,
+                        new Color(117, 218, 255, 230),
+                        0, trackY + trackHeight,
+                        new Color(40, 143, 233, 205)));
+                g.fill(fill);
+
+                Shape oldClip = g.getClip();
+                g.clip(fill);
+                g.setPaint(new GradientPaint(0, trackY,
+                        new Color(255, 255, 255, 92),
+                        0, trackY + trackHeight * .55f,
+                        new Color(255, 255, 255, 0)));
+                g.fillRect(fillX, trackY, fillWidth, Math.max(1, trackHeight / 2));
+                g.setClip(oldClip);
+            }
+        } finally {
+            g.dispose();
+        }
+    }
+
+    @Override
+    public void setIndeterminate(boolean indeterminate) {
+        super.setIndeterminate(indeterminate);
+        updateGlassTimer();
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        updateGlassTimer();
+    }
+
+    private void updateGlassTimer() {
+        if (glassTimer == null) {
+            return;
+        }
+        if (isVisible() && isIndeterminate()) {
+            if (!glassTimer.isRunning()) {
+                glassTimer.start();
+            }
+        } else if (glassTimer.isRunning()) {
+            glassTimer.stop();
         }
     }
 

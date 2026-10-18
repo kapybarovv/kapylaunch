@@ -1,0 +1,137 @@
+name: Build and publish kapylauncher
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "kapylauncher-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    env:
+      SHORT_BRAND: kapylauncher
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set launcher version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#kapylauncher-v}"
+          else
+            VERSION="0.0.${GITHUB_RUN_NUMBER}"
+          fi
+          echo "KAPYLAUNCHER_VERSION=${VERSION}" >> "${GITHUB_ENV}"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build Linux archive and update feed
+        run: ./gradlew --no-daemon :packages:linux:packageLinux :launcher:prepareDeploy
+      - name: Stage launcher update assets
+        run: |
+          mkdir -p dist
+          cp launcher/build/update/kapylauncher/launcher.jar dist/kapylauncher-launcher.jar
+          cp launcher/build/update/kapylauncher/kapylauncher-update.json dist/kapylauncher-update.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-and-update-feed
+          path: |
+            packages/linux/build/update/kapylauncher/kapylauncher-linux-*.tar.gz
+            dist/kapylauncher-launcher.jar
+            dist/kapylauncher-update.json
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    env:
+      SHORT_BRAND: kapylauncher
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set launcher version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_TYPE -eq "tag") {
+            $version = $env:GITHUB_REF_NAME -replace '^kapylauncher-v', ''
+          } else {
+            $version = "0.0.$($env:GITHUB_RUN_NUMBER)"
+          }
+          "KAPYLAUNCHER_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install Inno Setup
+        run: choco install innosetup --yes --no-progress
+      - name: Prepare Windows installer
+        run: .\gradlew.bat --no-daemon :packages:installer:prepareInstaller
+      - name: Compile Windows installer
+        shell: pwsh
+        run: |
+          $compiler = Get-ChildItem "C:\Program Files (x86)\Inno Setup *\ISCC.exe" | Select-Object -First 1
+          if (-not $compiler) { throw "Inno Setup compiler was not found" }
+          & $compiler.FullName "packages\installer\build\innosetup\kapylauncher\main.iss"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: packages/installer/build/innosetup/kapylauncher/kapylauncher-setup.exe
+          if-no-files-found: error
+
+  macos:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set release version
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#kapylauncher-v}"
+          else
+            VERSION="0.0.${GITHUB_RUN_NUMBER}"
+          fi
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" macos/kapylauncher/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${VERSION}" macos/kapylauncher/Info.plist
+      - name: Build universal macOS app
+        run: |
+          ./macos/kapylauncher/build.sh
+          mkdir -p dist
+          STAGE="$(mktemp -d)"
+          ditto --norsrc macos/kapylauncher/build/kapylauncher.app "${STAGE}/kapylauncher.app"
+          xattr -cr "${STAGE}/kapylauncher.app"
+          codesign --verify --deep --strict "${STAGE}/kapylauncher.app"
+          (cd "${STAGE}" && /usr/bin/zip -qry -X "${GITHUB_WORKSPACE}/dist/kapylauncher-macos-universal.zip" kapylauncher.app)
+          shasum -a 256 dist/kapylauncher-macos-universal.zip > dist/kapylauncher-macos-universal.zip.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-universal
+          path: dist/kapylauncher-macos-universal.zip*
+          if-no-files-found: error
+
+  publish:
+    needs: [linux, windows, macos]
+    if: startsWith(github.ref, 'refs/tags/kapylauncher-v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: kapylauncher ${{ github.ref_name }}
+          generate_release_notes: true
+          files: release-assets/**
