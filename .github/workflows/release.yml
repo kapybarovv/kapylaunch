@@ -15,12 +15,15 @@ jobs:
   linux:
     runs-on: ubuntu-latest
     env:
-      SHORT_BRAND: kapylauncher
+      KAPYLAUNCHER_MICROSOFT_CLIENT_ID: ${{ secrets.KAPYLAUNCHER_MICROSOFT_CLIENT_ID }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
-          fetch-depth: 0
-      - name: Set launcher version
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Set version and build Linux package
         shell: bash
         run: |
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
@@ -28,37 +31,32 @@ jobs:
           else
             VERSION="0.0.${GITHUB_RUN_NUMBER}"
           fi
-          echo "KAPYLAUNCHER_VERSION=${VERSION}" >> "${GITHUB_ENV}"
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-      - uses: gradle/actions/setup-gradle@v4
-      - name: Build Linux archive and update feed
-        run: ./gradlew --no-daemon :packages:linux:packageLinux :launcher:prepareDeploy
-      - name: Stage launcher update assets
+          ./gradlew --no-daemon -p composeApp -PappVersion="${VERSION}" test packageDeb
+      - name: Stage Linux package
+        shell: bash
         run: |
           mkdir -p dist
-          cp launcher/build/update/kapylauncher/launcher.jar dist/kapylauncher-launcher.jar
-          cp launcher/build/update/kapylauncher/kapylauncher-update.json dist/kapylauncher-update.json
+          PACKAGE="$(find composeApp/build/compose/binaries/main/deb -maxdepth 1 -name '*.deb' -print -quit)"
+          test -n "${PACKAGE}"
+          cp "${PACKAGE}" dist/kapylauncher-linux-amd64.deb
       - uses: actions/upload-artifact@v4
         with:
-          name: linux-and-update-feed
-          path: |
-            packages/linux/build/update/kapylauncher/kapylauncher-linux-*.tar.gz
-            dist/kapylauncher-launcher.jar
-            dist/kapylauncher-update.json
+          name: linux-amd64
+          path: dist/kapylauncher-linux-amd64.deb
           if-no-files-found: error
 
   windows:
     runs-on: windows-latest
     env:
-      SHORT_BRAND: kapylauncher
+      KAPYLAUNCHER_MICROSOFT_CLIENT_ID: ${{ secrets.KAPYLAUNCHER_MICROSOFT_CLIENT_ID }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
-          fetch-depth: 0
-      - name: Set launcher version
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Set version and build Windows package
         shell: pwsh
         run: |
           if ($env:GITHUB_REF_TYPE -eq "tag") {
@@ -66,57 +64,88 @@ jobs:
           } else {
             $version = "0.0.$($env:GITHUB_RUN_NUMBER)"
           }
-          "KAPYLAUNCHER_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          .\gradlew.bat --no-daemon -p composeApp "-PappVersion=$version" test packageMsi
+      - name: Stage Windows package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "dist" | Out-Null
+          $package = Get-ChildItem "composeApp\build\compose\binaries\main\msi" -Filter "*.msi" | Select-Object -First 1
+          if (-not $package) { throw "The Windows MSI package was not produced" }
+          Copy-Item $package.FullName "dist\kapylauncher-windows-x64.msi"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: dist/kapylauncher-windows-x64.msi
+          if-no-files-found: error
+
+  macos-arm64:
+    runs-on: macos-15
+    env:
+      KAPYLAUNCHER_MICROSOFT_CLIENT_ID: ${{ secrets.KAPYLAUNCHER_MICROSOFT_CLIENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
       - uses: gradle/actions/setup-gradle@v4
-      - name: Install Inno Setup
-        run: choco install innosetup --yes --no-progress
-      - name: Prepare Windows installer
-        run: .\gradlew.bat --no-daemon :packages:installer:prepareInstaller
-      - name: Compile Windows installer
-        shell: pwsh
-        run: |
-          $compiler = Get-ChildItem "C:\Program Files (x86)\Inno Setup *\ISCC.exe" | Select-Object -First 1
-          if (-not $compiler) { throw "Inno Setup compiler was not found" }
-          & $compiler.FullName "packages\installer\build\innosetup\kapylauncher\main.iss"
-          $installer = Get-ChildItem "packages\installer\build\innosetup\kapylauncher" -Filter "kapylauncher-setup.exe" -Recurse | Select-Object -First 1
-          if (-not $installer) { throw "The Windows installer was not produced" }
-          New-Item -ItemType Directory -Force -Path "dist" | Out-Null
-          Copy-Item $installer.FullName "dist\kapylauncher-windows-setup.exe"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows-installer
-          path: dist/kapylauncher-windows-setup.exe
-          if-no-files-found: error
-
-  macos:
-    runs-on: macos-26
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Set release version
+      - name: Set version and build Apple Silicon package
+        shell: bash
         run: |
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
             VERSION="${GITHUB_REF_NAME#kapylauncher-v}"
           else
             VERSION="0.0.${GITHUB_RUN_NUMBER}"
           fi
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" macos/kapylauncher/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${VERSION}" macos/kapylauncher/Info.plist
-      - name: Build universal macOS app and Finder installer
-        run: ./macos/kapylauncher/package.sh
+          ./gradlew --no-daemon -p composeApp -PappVersion="${VERSION}" test packageDmg
+      - name: Stage Apple Silicon package
+        shell: bash
+        run: |
+          mkdir -p dist
+          PACKAGE="$(find composeApp/build/compose/binaries/main/dmg -maxdepth 1 -name '*.dmg' -print -quit)"
+          test -n "${PACKAGE}"
+          cp "${PACKAGE}" dist/kapylauncher-macos-arm64.dmg
       - uses: actions/upload-artifact@v4
         with:
-          name: macos-universal
-          path: dist/kapylauncher-macos-universal.*
+          name: macos-arm64
+          path: dist/kapylauncher-macos-arm64.dmg
+          if-no-files-found: error
+
+  macos-intel:
+    runs-on: macos-15-intel
+    env:
+      KAPYLAUNCHER_MICROSOFT_CLIENT_ID: ${{ secrets.KAPYLAUNCHER_MICROSOFT_CLIENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Set version and build Intel package
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#kapylauncher-v}"
+          else
+            VERSION="0.0.${GITHUB_RUN_NUMBER}"
+          fi
+          ./gradlew --no-daemon -p composeApp -PappVersion="${VERSION}" test packageDmg
+      - name: Stage Intel package
+        shell: bash
+        run: |
+          mkdir -p dist
+          PACKAGE="$(find composeApp/build/compose/binaries/main/dmg -maxdepth 1 -name '*.dmg' -print -quit)"
+          test -n "${PACKAGE}"
+          cp "${PACKAGE}" dist/kapylauncher-macos-x64.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-x64
+          path: dist/kapylauncher-macos-x64.dmg
           if-no-files-found: error
 
   publish:
-    needs: [linux, windows, macos]
+    needs: [linux, windows, macos-arm64, macos-intel]
     if: startsWith(github.ref, 'refs/tags/kapylauncher-v')
     runs-on: ubuntu-latest
     permissions:
